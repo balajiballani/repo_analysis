@@ -1,0 +1,25 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: ado-architecture-mapper-backend
+  main:
+    allow-bean-definition-overriding: true
+
+azure:
+  devops:
+    api-version: "7.1"
+    base-url: "https://dev.azure.com"
+    default-timeout-seconds: 15
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,6 @@
+{
+  "name": "Azure DevOps Microservice Dependency & Architecture Mapper",
+  "description": "Analyzes Azure DevOps repositories to discover microservice inbound/outbound calls, database interactions, and asynchronous event streams, visualizing them on an interactive dependency graph.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
