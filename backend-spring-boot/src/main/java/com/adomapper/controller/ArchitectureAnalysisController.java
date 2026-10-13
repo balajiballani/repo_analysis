@@ -1,88 +1,131 @@
 package com.adomapper.controller;
 
 import com.adomapper.dto.Dtos.*;
-import com.adomapper.service.SpringMicroserviceAstParserService;
+import com.adomapper.service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+/**
+ * Spring Boot REST Controller orchestrating Azure DevOps scanning,
+ * Gemini AI architecture synthesis, Spring AST analysis, and blast radius simulation.
+ */
 @RestController
 @RequestMapping("/api/v1/architecture")
+@CrossOrigin(origins = "*")
 public class ArchitectureAnalysisController {
 
+    private final AdoRepositoryScannerService adoScannerService;
+    private final SpringGeminiAiArchitectureService geminiAiService;
     private final SpringMicroserviceAstParserService astParserService;
+    private final BlastRadiusService blastRadiusService;
+    private final PresetArchitectureService presetService;
 
-    public ArchitectureAnalysisController(SpringMicroserviceAstParserService astParserService) {
+    public ArchitectureAnalysisController(
+            AdoRepositoryScannerService adoScannerService,
+            SpringGeminiAiArchitectureService geminiAiService,
+            SpringMicroserviceAstParserService astParserService,
+            BlastRadiusService blastRadiusService,
+            PresetArchitectureService presetService
+    ) {
+        this.adoScannerService = adoScannerService;
+        this.geminiAiService = geminiAiService;
         this.astParserService = astParserService;
-    }
-
-    @PostMapping("/scan-ado")
-    public ResponseEntity<ArchitectureGraphDto> scanAdoRepository(@RequestBody AdoScanRequest request) {
-        String url = request.url() != null ? request.url() : "https://dev.azure.com/contoso/banking/_git/payment-service";
-        String repoName = extractRepoName(url);
-
-        // Analyze or synthesize Java Spring Boot microservice architecture
-        Map<String, String> sampleFiles = Map.of(
-                "PaymentController.java", "@RestController\n@RequestMapping(\"/api/v1/payments\")\npublic class PaymentController {\n    @Autowired private AccountClient accountClient;\n    @PostMapping(\"/execute\")\n    public PaymentResult executePayment(@RequestBody PaymentRequest req) { return null; }\n}",
-                "AccountClient.java", "@FeignClient(name = \"account-service\", url = \"${account.service.url}\")\npublic interface AccountClient {\n    @PostMapping(\"/api/v1/accounts/hold\")\n    HoldResult holdBalance(@RequestBody HoldRequest req);\n}",
-                "PaymentEntity.java", "@Entity\n@Table(name = \"tbl_payments\")\npublic class PaymentEntity {\n    @Id private UUID id;\n    private BigDecimal amount;\n}",
-                "PaymentEventListener.java", "@Service\npublic class PaymentEventListener {\n    @KafkaListener(topics = \"payment.settled.v1\")\n    public void onPaymentSettled(String event) {}\n}"
-        );
-
-        ArchitectureGraphDto graph = astParserService.parseRepository(
-                repoName,
-                "contoso-org",
-                "core-banking",
-                request.branch() != null ? request.branch() : "main",
-                url,
-                sampleFiles
-        );
-
-        return ResponseEntity.ok(graph);
-    }
-
-    @PostMapping("/blast-radius")
-    public ResponseEntity<BlastRadiusResponseDto> calculateBlastRadius(@RequestBody BlastRadiusRequest request) {
-        String failedId = request.failedNodeId();
-        List<String> directlyImpacted = List.of();
-        List<String> cascaded = List.of();
-
-        // Calculate impacted nodes from edges
-        if (request.currentGraph() != null && request.currentGraph().edges() != null) {
-            directlyImpacted = request.currentGraph().edges().stream()
-                    .filter(e -> e.target().equals(failedId))
-                    .map(ArchitectureEdgeDto::source)
-                    .toList();
-        }
-
-        BlastRadiusResponseDto response = new BlastRadiusResponseDto(
-                failedId,
-                failedId,
-                directlyImpacted,
-                cascaded,
-                List.of(),
-                List.of(),
-                35,
-                "Outage of " + failedId + " halts upstream transactions",
-                List.of("ingress -> " + failedId)
-        );
-
-        return ResponseEntity.ok(response);
+        this.blastRadiusService = blastRadiusService;
+        this.presetService = presetService;
     }
 
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(
                 "status", "UP",
-                "service", "Spring Boot ADO Architecture Mapper",
-                "version", "3.3.4",
-                "java", "21"
+                "framework", "Spring Boot 3.3.4",
+                "javaVersion", System.getProperty("java.version"),
+                "geminiAiAvailable", geminiAiService.isGeminiConfigured(),
+                "timestamp", java.time.Instant.now().toString()
         ));
     }
 
-    private String extractRepoName(String url) {
-        String[] parts = url.split("/");
-        return parts.length > 0 ? parts[parts.length - 1].replace(".git", "") : "service";
+    @GetMapping("/presets")
+    public ResponseEntity<List<Map<String, Object>>> getPresets() {
+        return ResponseEntity.ok(presetService.listPresets());
+    }
+
+    @GetMapping("/presets/{id}")
+    public ResponseEntity<ArchitectureGraphDto> getPreset(@PathVariable String id) {
+        return presetService.getPreset(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/scan-ado")
+    public ResponseEntity<ArchitectureGraphDto> scanAdoRepository(@RequestBody AdoScanRequest request) {
+        String url = request.url() != null ? request.url().trim() : "";
+        if (url.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (request.samplePresetId() != null && presetService.getPreset(request.samplePresetId()).isPresent()) {
+            return ResponseEntity.ok(presetService.getPreset(request.samplePresetId()).get());
+        }
+
+        AdoRepositoryScannerService.AdoRepoDetails details = adoScannerService.parseAdoUrl(url, request.branch());
+
+        // Fetch files from Azure DevOps if PAT supplied
+        Map<String, String> files = adoScannerService.fetchRepositoryFiles(details, request.pat());
+
+        // 1. Primary path: Gemini AI architectural extraction
+        if (geminiAiService.isGeminiConfigured()) {
+            Optional<ArchitectureGraphDto> aiGraph = geminiAiService.analyzeArchitectureWithGemini(
+                    url, details.repository(), files
+            );
+            if (aiGraph.isPresent()) {
+                return ResponseEntity.ok(aiGraph.get());
+            }
+        }
+
+        // 2. Deterministic Fallback path: Spring AST Annotation heuristic engine
+        ArchitectureGraphDto astGraph = astParserService.parseRepository(
+                details.repository(),
+                details.organization(),
+                details.project(),
+                details.branch(),
+                url,
+                files
+        );
+
+        return ResponseEntity.ok(astGraph);
+    }
+
+    @PostMapping("/scan-code")
+    public ResponseEntity<ArchitectureGraphDto> scanDirectCode(
+            @RequestParam(defaultValue = "Order Service") String systemName,
+            @RequestBody Map<String, String> files
+    ) {
+        String repoName = systemName.toLowerCase().replace(" ", "-");
+        String dummyUrl = "https://dev.azure.com/custom-org/spring-mesh/_git/" + repoName;
+
+        if (geminiAiService.isGeminiConfigured()) {
+            Optional<ArchitectureGraphDto> aiGraph = geminiAiService.analyzeArchitectureWithGemini(
+                    dummyUrl, repoName, files
+            );
+            if (aiGraph.isPresent()) {
+                return ResponseEntity.ok(aiGraph.get());
+            }
+        }
+
+        ArchitectureGraphDto graph = astParserService.parseRepository(
+                repoName, "custom-org", "spring-mesh", "main", dummyUrl, files
+        );
+        return ResponseEntity.ok(graph);
+    }
+
+    @PostMapping("/blast-radius")
+    public ResponseEntity<BlastRadiusResponseDto> calculateBlastRadius(@RequestBody BlastRadiusRequest request) {
+        BlastRadiusResponseDto response = blastRadiusService.computeBlastRadius(
+                request.failedNodeId(), request.currentGraph()
+        );
+        return ResponseEntity.ok(response);
     }
 }
