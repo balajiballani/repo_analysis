@@ -10,13 +10,19 @@ public class Dtos {
             String url,
             String pat,
             String branch,
-            String samplePresetId
+            String samplePresetId,
+            Boolean forceReset
     ) {}
 
     public record BlastRadiusRequest(
             String failedNodeId,
-            ArchitectureGraphDto currentGraph
-    ) {}
+            ArchitectureGraphDto currentGraph,
+            ArchitectureGraphDto graph
+    ) {
+        public ArchitectureGraphDto effectiveGraph() {
+            return currentGraph != null ? currentGraph : graph;
+        }
+    }
 
     public record BlastRadiusResponseDto(
             String failedNodeId,
@@ -106,6 +112,18 @@ public class Dtos {
             double y
     ) {}
 
+    public record AzureCloudDto(
+            String targetCompute,
+            String targetGateway,
+            String targetDatabase,
+            String targetMessaging,
+            String targetIdentity,
+            String targetSecrets,
+            String targetMonitoring,
+            Integer readinessScore,
+            List<String> recommendedSteps
+    ) {}
+
     public record ArchitectureNodeDto(
             String id,
             String name,
@@ -123,8 +141,21 @@ public class Dtos {
             AsyncEventPubSubDto asyncEvents,
             List<CodeEvidenceDto> codeEvidence,
             NodeMetricsDto metrics,
-            PositionDto position
-    ) {}
+            PositionDto position,
+            AzureCloudDto azureCloud
+    ) {
+        public ArchitectureNodeDto(
+                String id, String name, String type, String category, String tech,
+                String language, String summary, String repoUrl, String repoPath,
+                String status, List<InboundEndpointDto> inboundEndpoints,
+                List<OutboundCallDto> outboundCalls, List<DatabaseInteractionDto> databases,
+                AsyncEventPubSubDto asyncEvents, List<CodeEvidenceDto> codeEvidence,
+                NodeMetricsDto metrics, PositionDto position
+        ) {
+            this(id, name, type, category, tech, language, summary, repoUrl, repoPath, status,
+                 inboundEndpoints, outboundCalls, databases, asyncEvents, codeEvidence, metrics, position, null);
+        }
+    }
 
     public record ArchitectureEdgeDto(
             String id,
@@ -164,8 +195,18 @@ public class Dtos {
             String organization,
             String project,
             String scannedAt,
+            String cloudProvider,
             List<ArchitectureNodeDto> nodes,
             List<ArchitectureEdgeDto> edges,
             GraphSummaryDto summary
-    ) {}
+    ) {
+        public ArchitectureGraphDto(
+                String systemName, String repositoryUrl, String branch,
+                String organization, String project, String scannedAt,
+                List<ArchitectureNodeDto> nodes, List<ArchitectureEdgeDto> edges,
+                GraphSummaryDto summary
+        ) {
+            this(systemName, repositoryUrl, branch, organization, project, scannedAt, "azure", nodes, edges, summary);
+        }
+    }
 }

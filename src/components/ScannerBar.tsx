@@ -236,13 +236,18 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
         {onResetSession && (
           <button
             type="button"
-            onClick={onResetSession}
+            onClick={() => {
+              setUrl('');
+              setBranch('main');
+              setPat('');
+              onResetSession();
+            }}
             disabled={loading}
             className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
-            title="Reset dashboard and clear earlier session"
+            title="Reset dashboard, clear URL and discard current architecture"
           >
             <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-            <span className="hidden sm:inline">Reset</span>
+            <span className="hidden sm:inline">Clear</span>
           </button>
         )}
 
@@ -266,6 +271,25 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
           )}
         </button>
       </form>
+
+      {/* New URL Live Notice (Stateless Direct Fetch) */}
+      {graph && url.trim() && graph.repositoryUrl && url.trim() !== graph.repositoryUrl && (
+        <div className="mt-2 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-800/40 flex items-center justify-between text-xs text-amber-300 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>
+              New URL entered. Old architecture is not stored and will be replaced by reading live from: <strong className="font-mono text-white">{url}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="text-[10px] font-bold text-amber-200 bg-amber-900/60 hover:bg-amber-800/80 px-2 py-0.5 rounded border border-amber-700/60"
+          >
+            Read From URL →
+          </button>
+        </div>
+      )}
 
       {/* Target Subfolder Live Banner */}
       {parsedInfo?.subPath && (
@@ -308,63 +332,14 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
         </div>
       )}
 
-      {/* Internal Microservices Switcher Bar (Always Available For Fast Switching) */}
-      <div className="mt-2.5 pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] text-cyan-400 font-semibold flex items-center gap-1">
-            <FolderGit2 className="w-3 h-3 text-cyan-400" />
-            Internal Microservices:
-          </span>
-          {[
-            { id: 'payment-service', label: 'payment-service', icon: '💳' },
-            { id: 'product-service', label: 'product-service', icon: '📦' },
-            { id: 'order-service', label: 'order-service', icon: '🛒' },
-            { id: 'auth-service', label: 'auth-service', icon: '🔐' },
-            { id: 'inventory-service', label: 'inventory-service', icon: '🏬' }
-          ].map(ms => {
-            const isSelected = parsedInfo?.subPath === ms.id;
-            return (
-              <button
-                key={ms.id}
-                type="button"
-                onClick={() => handleSwitchMicroservice(ms.id)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono border transition-all flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-cyan-500/25 text-cyan-200 border-cyan-400 font-bold shadow-sm shadow-cyan-500/20'
-                    : 'bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800 hover:border-slate-700'
-                }`}
-                title={`Reset session and map architecture for ${ms.id}`}
-              >
-                <span>{ms.icon}</span>
-                <span>{ms.label}</span>
-                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Quick Sample Repositories (Azure DevOps & Cloud Migrations) */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] text-blue-400 font-semibold flex items-center gap-1">
-            <span>☁️</span> Azure Repos:
-          </span>
-          {SAMPLE_REPOS.filter(s => !s.isGithub).map((sample) => (
-            <button
-              key={sample.name}
-              type="button"
-              onClick={() => handleSelectSample(sample.url)}
-              className="px-2 py-0.5 rounded text-[11px] font-mono border bg-blue-950/40 hover:bg-blue-900/60 text-blue-300 hover:text-white border-blue-800/60 transition-all flex items-center gap-1"
-              title={`Isolate internal microservice from Azure DevOps: ${sample.url}`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-              <span>{sample.name.replace('Azure Repos: ', '').replace('Azure DevOps: ', '')}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Topology Summary Counts */}
-        {graph && (
-          <div className="hidden 2xl:flex items-center gap-3 text-[11px] text-slate-300 bg-slate-950/60 px-3 py-1 rounded-lg border border-slate-800/80">
+      {/* Topology Summary Counts (Only shown when an active architecture graph exists) */}
+      {graph && (
+        <div className="mt-2.5 pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>Architecture read directly from <strong className="text-white font-mono">{graph.repositoryUrl}</strong></span>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-slate-300 bg-slate-950/60 px-3 py-1 rounded-lg border border-slate-800/80">
             <span className="flex items-center gap-1 text-blue-400">
               <Server className="w-3 h-3" />
               <strong>{graph.summary.totalServices}</strong> Services
@@ -380,8 +355,8 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
               <strong>{graph.summary.totalQueues}</strong> Queues
             </span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

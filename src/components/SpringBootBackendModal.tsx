@@ -151,17 +151,21 @@ export const SpringBootBackendModal: React.FC<SpringBootBackendModalProps> = ({
               })
             )}
 
-            {/* Maven build instructions */}
-            <div className="mt-4 p-3 bg-slate-900 rounded-xl border border-slate-850 space-y-2 text-[11px]">
-              <div className="font-semibold text-amber-300 flex items-center gap-1">
+            {/* Pure Java Deployment instructions */}
+            <div className="mt-4 p-3 bg-slate-900 rounded-xl border border-emerald-550/30 space-y-2 text-[11px]">
+              <div className="font-semibold text-emerald-400 flex items-center gap-1">
                 <Terminal className="w-3.5 h-3.5" />
-                <span>Maven Run Command:</span>
+                <span>Pure Java Deployment (Zero Node):</span>
               </div>
-              <pre className="p-2 bg-black/60 rounded text-[10px] font-mono text-emerald-400 overflow-x-auto">
-                ./mvnw spring-boot:run
+              <pre className="p-2 bg-black/60 rounded text-[10px] font-mono text-emerald-400 overflow-x-auto whitespace-pre-wrap">
+# Option 2: Build & run single JAR
+./build-pure-java.sh
+
+# Or run with Java 21 directly:
+java -jar backend-spring-boot/target/*.jar
               </pre>
-              <div className="text-[10px] text-slate-400">
-                Port: <code>8080</code> | Java 21 LTS | Spring Cloud OpenFeign
+              <div className="text-[10px] text-slate-400 leading-normal">
+                Spring Boot serves both the React SPA from <code>classpath:/static/</code> and all REST APIs on port <code>8080</code> with zero Node runtime required in production.
               </div>
             </div>
           </div>

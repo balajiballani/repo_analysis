@@ -242,48 +242,53 @@ async function fetchGithubRepoFiles(
   }
 
   // Direct raw fallback if tree API is rate-limited (403) or tree was empty
-  if (fetchedFiles.length === 0 && subPath) {
-    const prefix = subPath.replace(/^\/+|\/+$/g, '');
-    const cleanPkg = prefix.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const cleanPascal = prefix.replace(/(?:^|[-_])(\w)/g, (_, c) => c.toUpperCase());
+  if (fetchedFiles.length === 0) {
+    const prefix = subPath ? subPath.replace(/^\/+|\/+$/g, '') : '';
+    const prefixSlash = prefix ? prefix + '/' : '';
+    const cleanPkg = prefix.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || target.repo.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const cleanPascal = prefix.replace(/(?:^|[-_])(\w)/g, (_, c) => c.toUpperCase()) || target.repo.replace(/(?:^|[-_])(\w)/g, (_, c) => c.toUpperCase());
+    const cleanSimple = cleanPascal.replace(/Service$/i, '') || cleanPascal;
 
-    const knownPaths = [
-      `${prefix}/src/main/resources/application.yml`,
-      `${prefix}/src/main/resources/application.yaml`,
-      `${prefix}/src/main/resources/application.properties`,
-      `${prefix}/pom.xml`,
-      `${prefix}/build.gradle`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/${cleanPascal}Application.java`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/controller/${cleanPascal}Controller.java`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/service/CallAPI.java`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/event/EventConsumer.java`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/event/EventProducer.java`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/entity/${cleanPascal}.java`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/repository/${cleanPascal}Repository.java`,
-      `${prefix}/src/main/java/com/ecommerce/${cleanPkg}/constant/KafkaConstant.java`,
-      // Common payment-service fallbacks
-      `${prefix}/src/main/java/com/ecommerce/paymentservice/PaymentServiceApplication.java`,
-      `${prefix}/src/main/java/com/ecommerce/paymentservice/controller/PaymentController.java`,
-      `${prefix}/src/main/java/com/ecommerce/paymentservice/service/CallAPI.java`,
-      // Common product-service fallbacks
-      `${prefix}/src/main/java/com/ecommerce/productservice/ProductServiceApplication.java`,
-      `${prefix}/src/main/java/com/ecommerce/productservice/controller/ProductController.java`,
-      `${prefix}/src/main/java/com/ecommerce/productservice/controller/CategoryController.java`,
-      // Common order-service fallbacks
-      `${prefix}/src/main/java/com/ecommerce/orderservice/OrderServiceApplication.java`,
-      `${prefix}/src/main/java/com/ecommerce/orderservice/controller/OrderController.java`,
-      `${prefix}/src/main/java/com/ecommerce/orderservice/service/CallAPI.java`
+    const candidatePaths = [
+      `${prefixSlash}src/main/resources/application.yml`,
+      `${prefixSlash}src/main/resources/application.yaml`,
+      `${prefixSlash}src/main/resources/application.properties`,
+      `${prefixSlash}src/main/resources/bootstrap.yml`,
+      `${prefixSlash}src/main/resources/bootstrap.properties`,
+      `${prefixSlash}pom.xml`,
+      `${prefixSlash}build.gradle`,
+      `${prefixSlash}settings.gradle`,
+      `${prefixSlash}Dockerfile`,
+      `${prefixSlash}docker-compose.yml`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/${cleanPascal}Application.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/${cleanSimple}Application.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/controller/${cleanPascal}Controller.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/controller/${cleanSimple}Controller.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/service/${cleanPascal}Service.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/service/${cleanSimple}Service.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/service/CallAPI.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/model/${cleanSimple}.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/entity/${cleanSimple}.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/entity/${cleanPascal}.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/repository/${cleanSimple}Repository.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/repository/${cleanPascal}Repository.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/event/EventConsumer.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/event/EventProducer.java`,
+      `${prefixSlash}src/main/java/com/ecommerce/${cleanPkg}/constant/KafkaConstant.java`
     ];
 
-    for (const kp of knownPaths) {
-      try {
-        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${activeBranch}/${kp}`;
-        const rawRes = await fetch(rawUrl);
-        if (rawRes.ok) {
-          fetchedFiles.push({ path: kp, content: await rawRes.text() });
-        }
-      } catch (_) {}
-    }
+    await Promise.all(
+      candidatePaths.map(async kp => {
+        try {
+          const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${activeBranch}/${kp}`;
+          const rawRes = await fetch(rawUrl, { signal: AbortSignal.timeout(3500) });
+          if (rawRes.ok) {
+            const content = await rawRes.text();
+            fetchedFiles.push({ path: kp, content });
+          }
+        } catch (_) {}
+      })
+    );
   }
 
   return { branch: activeBranch, files: fetchedFiles };
@@ -791,16 +796,17 @@ function parseFilesWithAst(
   // Database Node
   const tables = Array.from(discoveredTables);
   if (tables.length > 0 || dbUrl) {
-    const isPostgres = dbUrl.includes('postgresql') || files.some(f => f.content.includes('postgresql') || f.content.includes('paymentservice'));
+    const isPostgres = dbUrl.includes('postgresql') || files.some(f => f.content.includes('postgresql') || f.content.includes('org.postgresql.Driver'));
     const dbName = isPostgres ? `${formattedServiceName} DB (PostgreSQL)` : `${formattedServiceName} DB`;
     const dbId = `${serviceId}-db`;
+    const defaultTableName = `${serviceId.replace(/-service$/, '').replace(/-+/g, '_')}s`;
 
     databases.push({
       dbId,
       dbName,
       dbType: isPostgres ? 'PostgreSQL' : 'Relational SQL',
       accessMode: 'ReadWrite',
-      tablesOrCollections: tables.length > 0 ? tables : ['payments'],
+      tablesOrCollections: tables.length > 0 ? tables : [defaultTableName],
       orm: 'Spring Data JPA / Hibernate'
     });
 
@@ -827,39 +833,69 @@ function parseFilesWithAst(
       source: serviceId,
       target: dbId,
       type: 'db-readwrite',
-      label: `JPA CRUD [${tables.length ? tables.join(', ') : 'payments'}]`,
+      label: `JPA CRUD [${tables.length ? tables.join(', ') : defaultTableName}]`,
       protocol: 'PostgreSQL Wire'
     });
   }
 
-  // 4. Asynchronous Events: Kafka (EventProducer, EventConsumer, @KafkaListener, KafkaConstant)
-  const isKafkaUsed = files.some(f => f.content.includes('kafka') || f.content.includes('Kafka') || f.content.includes('KafkaConstant') || f.content.includes('EventConsumer') || f.content.includes('EventProducer'));
-  if (isKafkaUsed) {
-    const qId = `${serviceId}-kafka`;
-    const topics: string[] = [];
+  // 4. Asynchronous Events: Kafka / Message Queues (Strict discovery - NO hardcoded fallbacks from previous projects)
+  const discoveredPublished: any[] = [];
+  const discoveredConsumed: any[] = [];
+  const discoveredTopics = new Set<string>();
 
-    for (const f of files) {
-      const c = f.content;
-      const topicMatches = c.matchAll(/String\s+[A-Z0-9_]+_TOPIC\s*=\s*["']([^"']+)["']/g);
-      for (const tm of topicMatches) {
-        topics.push(tm[1]);
+  for (const f of files) {
+    const c = f.content;
+    // Check for @KafkaListener(topics = "...") or @KafkaListener(topics = "${...}")
+    const kafkaListenerMatches = c.matchAll(/@KafkaListener\s*\(\s*(?:(?:topics|value)\s*=\s*)?(?:["']([^"']+)["']|\$?\{([^}]+)\})/g);
+    for (const lm of kafkaListenerMatches) {
+      const topic = lm[1] || lm[2];
+      if (topic && !topic.includes('topic-placeholder')) {
+        discoveredTopics.add(topic);
+        discoveredConsumed.push({
+          topicOrQueue: topic,
+          brokerType: 'Kafka',
+          handlerName: 'onMessage'
+        });
       }
     }
-    if (topics.length === 0) {
-      topics.push('profileOnboarding', 'profileOnboarded');
+
+    // Check for KafkaTemplate.send("...")
+    const kafkaSendMatches = c.matchAll(/(?:kafkaTemplate|template)\.send\s*\(\s*["']([^"']+)["']/g);
+    for (const sm of kafkaSendMatches) {
+      const topic = sm[1];
+      if (topic) {
+        discoveredTopics.add(topic);
+        discoveredPublished.push({
+          topicOrQueue: topic,
+          brokerType: 'Kafka',
+          eventSchema: `${formattedServiceName}Event`
+        });
+      }
     }
 
-    publishedEvents.push({
-      topicOrQueue: topics[0] || `${serviceId}.events`,
-      brokerType: 'Kafka',
-      eventSchema: `${formattedServiceName}Event`
-    });
+    // Check for explicit Kafka topic constants
+    const topicConstMatches = c.matchAll(/(?:String|val|var)\s+[A-Z0-9_]*(?:TOPIC|QUEUE)[A-Z0-9_]*\s*=\s*["']([^"']+)["']/g);
+    for (const tm of topicConstMatches) {
+      if (tm[1]) discoveredTopics.add(tm[1]);
+    }
+  }
 
-    consumedEvents.push({
-      topicOrQueue: topics[1] || topics[0] || `${serviceId}.events`,
-      brokerType: 'Kafka',
-      handlerName: 'receive'
-    });
+  // ONLY instantiate a queue node IF real event queues/topics were discovered in this repository
+  if (discoveredTopics.size > 0 || discoveredPublished.length > 0 || discoveredConsumed.length > 0) {
+    const topics = Array.from(discoveredTopics);
+    const qId = `${serviceId}-kafka`;
+    const primaryTopic = topics[0] || `${serviceId}.events`;
+
+    if (discoveredPublished.length === 0) {
+      discoveredPublished.push({
+        topicOrQueue: primaryTopic,
+        brokerType: 'Kafka',
+        eventSchema: `${formattedServiceName}Event`
+      });
+    }
+
+    publishedEvents.push(...discoveredPublished);
+    consumedEvents.push(...discoveredConsumed);
 
     downstreamMap.set(qId, {
       id: qId,
@@ -884,7 +920,7 @@ function parseFilesWithAst(
       source: serviceId,
       target: qId,
       type: 'async-publish',
-      label: `Kafka Pub/Sub ('${topics[0]}')`,
+      label: `Kafka Pub/Sub ('${primaryTopic}')`,
       protocol: 'Kafka Protocol'
     });
   }
@@ -938,7 +974,7 @@ function parseFilesWithAst(
       targetCompute: 'Azure Container Apps (ACA) / AKS',
       targetGateway: 'Azure API Management (APIM)',
       targetDatabase: dbUrl.includes('postgres') || files.some(f => f.content.includes('postgres')) ? 'Azure Database for PostgreSQL - Flexible Server' : 'Azure SQL Database',
-      targetMessaging: isKafkaUsed ? 'Azure Event Hubs (Kafka 3.x Protocol API)' : 'Azure Service Bus',
+      targetMessaging: (publishedEvents.length > 0 || consumedEvents.length > 0) ? 'Azure Event Hubs (Kafka 3.x Protocol API)' : 'Azure Service Bus / Direct REST',
       targetIdentity: 'Microsoft Entra ID + Azure Managed Identity',
       targetMonitoring: 'Azure Application Insights (OpenTelemetry Java)',
       targetSecrets: 'Azure Key Vault (Zero-Trust RBAC)',
@@ -971,8 +1007,7 @@ function parseFilesWithAst(
       totalQueues: allNodes.filter(n => n.type === 'queue').length,
       syncCallCount: edges.filter(e => e.type === 'sync-http' || e.type === 'gateway-route').length,
       asyncEventCount: edges.filter(e => e.type.startsWith('async-')).length,
-      dbInteractionCount: edges.filter(e => e.type.startsWith('db-')).length,
-      architecturalStyle: 'Spring Boot Microservices with Kafka & RestClient',
+      architecturalStyle: (publishedEvents.length > 0 || consumedEvents.length > 0) ? 'Spring Boot 3 + PostgreSQL + Kafka Event Streaming' : (databases.length > 0 ? 'Spring Boot 3 + PostgreSQL Relational Persistence' : 'Spring Boot 3 REST Microservice'),
       detectedRisks: [
         {
           severity: 'medium',
@@ -2164,41 +2199,9 @@ app.post('/api/analyze/ado', async (req: Request, res: Response) => {
     const target = parseRepoUrl(url, branch);
     console.log(`[Repository Scan] Target: ${target.owner}/${target.repo}, Branch: ${target.branch}, SubPath: ${target.subPath || '(root)'}, Service: ${target.serviceName}, Provider: ${target.isGithub ? 'GitHub' : 'Azure DevOps'}`);
 
-    // Dynamic internal microservice routing for known ecommerce-microservices repository (GitHub OR Azure DevOps migrated)
-    if (target.cleanUrl.includes('ecommerce-microservices') || target.repo.includes('ecommerce-microservices')) {
-      const sub = (target.subPath || '').toLowerCase();
-      let matchedPreset: any = null;
-      if (sub.includes('payment')) {
-        matchedPreset = { ...PRESET_ECOMMERCE_PAYMENT };
-      } else if (sub.includes('product')) {
-        matchedPreset = { ...PRESET_ECOMMERCE_PRODUCT };
-      } else if (sub.includes('order')) {
-        matchedPreset = { ...PRESET_ECOMMERCE_ORDER };
-      } else if (sub.includes('auth')) {
-        matchedPreset = { ...PRESET_ECOMMERCE_AUTH };
-      } else if (sub.includes('inventory')) {
-        matchedPreset = { ...PRESET_ECOMMERCE_INVENTORY };
-      }
-
-      if (matchedPreset) {
-        matchedPreset.repositoryUrl = target.cleanUrl;
-        matchedPreset.cloudProvider = target.isGithub ? 'github' : 'azure';
-        if (!target.isGithub) {
-          matchedPreset.systemName = `${formatName(target.serviceName)} Architecture (Azure DevOps / ${target.subPath || target.serviceName})`;
-        }
-        return res.json(matchedPreset);
-      }
-    }
-
-    // Direct routing for Azure DevOps Contoso / Fabrikam meshes
-    if (target.cleanUrl.includes('contoso') || target.cleanUrl.includes('core-banking') || target.cleanUrl.includes('payment-orchestrator')) {
-      const fintech = { ...PRESET_FINTECH, repositoryUrl: target.cleanUrl, cloudProvider: 'azure' };
-      return res.json(fintech);
-    }
-    if (target.cleanUrl.includes('fabrikam') || target.cleanUrl.includes('order-mesh')) {
-      const mesh = { ...PRESET_ECOMMERCE_MESH, repositoryUrl: target.cleanUrl, cloudProvider: 'azure' };
-      return res.json(mesh);
-    }
+    // Live Remote Fetch: Do not serve stored presets for scanned URLs.
+    // Fetch directly from the repository at that URL and parse dynamically.
+    console.log(`[Repository Scan] Reading live files directly from remote URL: ${target.cleanUrl}`);
 
     let files: Array<{ path: string; content: string }> = [];
 
@@ -2305,6 +2308,7 @@ app.get('/api/backend/code', (_req: Request, res: Response) => {
         const relPath = relativeRoot ? `${relativeRoot}/${item}` : item;
         const stat = fs.statSync(fullPath);
         if (stat.isDirectory()) {
+          if (item === 'static' || item === 'target' || item === '.git' || item === 'node_modules') continue;
           walkDir(fullPath, relPath);
         } else if (stat.isFile()) {
           let lang = 'plaintext';
@@ -2313,6 +2317,8 @@ app.get('/api/backend/code', (_req: Request, res: Response) => {
           else if (item.endsWith('.yml') || item.endsWith('.yaml')) lang = 'yaml';
           else if (item.endsWith('.properties')) lang = 'properties';
           else if (item.endsWith('.md')) lang = 'markdown';
+          else if (item.toLowerCase().includes('dockerfile')) lang = 'dockerfile';
+          else if (item.endsWith('.sh')) lang = 'bash';
 
           try {
             const content = fs.readFileSync(fullPath, 'utf-8');

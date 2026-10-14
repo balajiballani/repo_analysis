@@ -164,7 +164,7 @@ public class SpringMicroserviceAstParserService {
                 ));
             }
 
-            if (code.contains("KafkaTemplate") || code.contains(".send(")) {
+            if (code.contains("KafkaTemplate") && code.contains(".send(")) {
                 publishedEvents.add(new EventPublishedDto(
                         serviceId + ".events.v1",
                         "Kafka",

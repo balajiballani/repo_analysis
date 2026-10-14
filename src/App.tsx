@@ -382,170 +382,73 @@ export default function App() {
             onScanRepository={(url) => handleScan(url, 'main')}
           />
         ) : (
-          /* Ready Landing State When Dashboard is Reset / Cleared */
+          /* Clean, Pristine Landing State - No Stored Data */
           <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950 text-center relative overflow-y-auto">
-            <div className="max-w-2xl w-full my-auto">
-              {/* Hero Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-800/60 text-cyan-300 text-xs font-mono mb-4">
-                <FolderGit2 className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Monorepo & Multi-Module Microservice Mapper</span>
+            {/* Ambient Background Grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b0a_1px,transparent_1px),linear-gradient(to_bottom,#1e293b0a_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+
+            <div className="max-w-xl w-full my-auto relative z-10">
+              {/* Clean Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-mono mb-5 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Stateless Architecture Analyzer</span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-3">
-                Target Any Internal Microservice Subfolder
+                Live Repository Architecture Mapper
               </h1>
 
-              <p className="text-sm text-slate-400 mb-6 max-w-lg mx-auto">
-                Paste any GitHub or Azure DevOps subfolder URL. The mapper strictly isolates that microservice, mapping its ingress routes, downstream RestClient calls, databases, and Kafka streams.
+              <p className="text-sm text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
+                Paste any GitHub or Azure DevOps repository or microservice subfolder URL in the scanner bar above. The codebase is read live on-demand with zero stored architecture.
               </p>
 
-              {/* Quick Select Microservice Cards (GitHub & Azure DevOps Migrated) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 text-left">
-                {/* 1. GitHub payment-service */}
-                <button
-                  type="button"
-                  onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/payment-service', 'main')}
-                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <span>💳</span> Payment Service
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-                      GitHub
-                    </span>
+              {/* 3 Step Process Guide */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 text-left">
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-mono text-xs font-bold mb-2.5">
+                    1
                   </div>
-                  <p className="text-[11px] text-slate-400 mb-2.5">
-                    Spring Boot 3.3, RestClient calls to Order & Auth, PostgreSQL, Kafka Profile Onboarding.
-                  </p>
-                  <div className="text-[11px] font-mono text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    <span>Map payment-service</span>
-                    <ArrowRight className="w-3 h-3" />
+                  <div className="text-xs font-semibold text-slate-200 mb-1">Live Remote Fetch</div>
+                  <div className="text-[11px] text-slate-400 leading-snug">
+                    Fetches files directly from GitHub or Azure Repos in real time.
                   </div>
-                </button>
+                </div>
 
-                {/* 2. GitHub product-service */}
-                <button
-                  type="button"
-                  onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/product-service', 'main')}
-                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <span>📦</span> Product Service
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-                      GitHub
-                    </span>
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                  <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-mono text-xs font-bold mb-2.5">
+                    2
                   </div>
-                  <p className="text-[11px] text-slate-400 mb-2.5">
-                    Spring Boot 3.3, Products & Categories REST endpoints, PostgreSQL, Keycloak OAuth2.
-                  </p>
-                  <div className="text-[11px] font-mono text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    <span>Map product-service</span>
-                    <ArrowRight className="w-3 h-3" />
+                  <div className="text-xs font-semibold text-slate-200 mb-1">Dynamic Code AST</div>
+                  <div className="text-[11px] text-slate-400 leading-snug">
+                    Extracts REST controllers, RestClients, DB entities, and Kafka topics.
                   </div>
-                </button>
+                </div>
 
-                {/* 3. GitHub order-service */}
-                <button
-                  type="button"
-                  onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/order-service', 'main')}
-                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <span>🛒</span> Order Service
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-                      GitHub
-                    </span>
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-mono text-xs font-bold mb-2.5">
+                    3
                   </div>
-                  <p className="text-[11px] text-slate-400 mb-2.5">
-                    Order Processing, RestClient to Auth & Product services, PostgreSQL 16 persistence.
-                  </p>
-                  <div className="text-[11px] font-mono text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    <span>Map order-service</span>
-                    <ArrowRight className="w-3 h-3" />
+                  <div className="text-xs font-semibold text-slate-200 mb-1">Zero Persistence</div>
+                  <div className="text-[11px] text-slate-400 leading-snug">
+                    Completely stateless session. New URL inputs replace old graphs instantly.
                   </div>
-                </button>
-
-                {/* 4. Azure Repos: payment-service (Azure Migrated) */}
-                <button
-                  type="button"
-                  onClick={() => handleScan('https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fpayment-service', 'main')}
-                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <span>💳</span> Payment Service
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/60">
-                      Azure Repos
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mb-2.5">
-                    Azure-migrated payment-service: ACA container, Azure PostgreSQL Flexible, Azure Event Hubs.
-                  </p>
-                  <div className="text-[11px] font-mono text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    <span>Map Azure payment-service</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </div>
-                </button>
-
-                {/* 5. Azure Repos: product-service (Azure Migrated) */}
-                <button
-                  type="button"
-                  onClick={() => handleScan('https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fproduct-service', 'main')}
-                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <span>📦</span> Product Service
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/60">
-                      Azure Repos
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mb-2.5">
-                    Azure-migrated product-service: Azure APIM, Azure Container Apps, Azure DB for PostgreSQL.
-                  </p>
-                  <div className="text-[11px] font-mono text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    <span>Map Azure product-service</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </div>
-                </button>
-
-                {/* 6. Azure DevOps Core Banking */}
-                <button
-                  type="button"
-                  onClick={() => loadPreset('fintech-core')}
-                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <span>🏦</span> Core Banking Mesh
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/60">
-                      Azure DevOps
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mb-2.5">
-                    Azure DevOps repo, Saga Orchestration, Azure Service Bus, PostgreSQL mesh.
-                  </p>
-                  <div className="text-[11px] font-mono text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    <span>Map Banking Mesh</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </div>
-                </button>
+                </div>
               </div>
 
-              {/* Instructions footer */}
-              <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-850 text-xs text-slate-500 flex items-center justify-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>
-                  Paste any URL into the search bar above to reset the session and isolate that microservice automatically.
-                </span>
+              {/* URL Example Tips */}
+              <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-850 text-left text-xs font-mono space-y-1.5 text-slate-400">
+                <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">
+                  Supported URL Formats:
+                </div>
+                <div className="text-[11px] text-slate-300 truncate">
+                  • GitHub Root: <span className="text-cyan-400">https://github.com/org/repo</span>
+                </div>
+                <div className="text-[11px] text-slate-300 truncate">
+                  • GitHub Subfolder: <span className="text-cyan-400">https://github.com/org/repo/tree/main/service-name</span>
+                </div>
+                <div className="text-[11px] text-slate-300 truncate">
+                  • Azure Repos: <span className="text-blue-400">https://dev.azure.com/org/proj/_git/repo?path=/service-name</span>
+                </div>
               </div>
             </div>
           </div>
