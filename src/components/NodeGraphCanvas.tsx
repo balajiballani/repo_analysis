@@ -18,7 +18,9 @@ import {
   Eye,
   CheckCircle2,
   Clock,
-  Layers
+  Layers,
+  Sparkles,
+  Github
 } from 'lucide-react';
 import { ArchitectureGraph, ArchitectureNode, ArchitectureEdge, NodeType, BlastRadiusResult } from '../types';
 
@@ -32,6 +34,7 @@ interface NodeGraphCanvasProps {
   blastRadiusMode: boolean;
   onSimulateNodeFailure: (nodeId: string) => void;
   onUpdateNodePosition: (nodeId: string, x: number, y: number) => void;
+  onScanRepository?: (url: string) => void;
 }
 
 export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
@@ -43,7 +46,8 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
   blastRadiusResult,
   blastRadiusMode,
   onSimulateNodeFailure,
-  onUpdateNodePosition
+  onUpdateNodePosition,
+  onScanRepository
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +63,19 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
   // Filter & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'service' | 'database' | 'queue'>('all');
+
+  // Detect if user pasted a repository URL in this search box
+  const isPastedRepoUrl = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return q.includes('github.com') || q.includes('dev.azure.com') || q.includes('visualstudio.com') || (q.startsWith('http') && q.includes('/'));
+  }, [searchQuery]);
+
+  const handleScanPastedUrl = () => {
+    if (onScanRepository && isPastedRepoUrl) {
+      onScanRepository(searchQuery.trim());
+      setSearchQuery('');
+    }
+  };
 
   // Zoom handlers
   const handleZoom = (delta: number) => {
@@ -149,6 +166,11 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
 
   // Filter nodes
   const filteredNodes = useMemo(() => {
+    if (isPastedRepoUrl) {
+      // If user pasted a URL in the filter box, do not hide all nodes, keep showing current graph
+      return graph.nodes;
+    }
+
     return graph.nodes.filter(node => {
       const matchesSearch = searchQuery === '' || 
         node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,7 +186,7 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
 
       return matchesSearch && matchesType;
     });
-  }, [graph.nodes, searchQuery, typeFilter]);
+  }, [graph.nodes, searchQuery, typeFilter, isPastedRepoUrl]);
 
   const nodeMap = useMemo(() => {
     const map = new Map<string, ArchitectureNode>();
@@ -206,10 +228,10 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
         }}
       />
 
-      {/* Top Floating Control Bar (Search, Filters, Mode Banner) */}
+      {/* Top Floating Control Bar */}
       <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-800 shadow-xl">
-          {/* Quick Search */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 pointer-events-auto bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-800 shadow-xl">
+          {/* Quick Search & URL paste detector */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -220,6 +242,18 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
               className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-850 rounded-xl text-xs text-slate-200 placeholder-slate-500 w-48 sm:w-64 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
             />
           </div>
+
+          {/* Smart URL Paste Prompt */}
+          {isPastedRepoUrl && (
+            <button
+              onClick={handleScanPastedUrl}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 animate-pulse transition-all"
+            >
+              <Github className="w-3.5 h-3.5" />
+              <span>Map This Repo Link</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
 
           {/* Type Filters */}
           <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
@@ -290,7 +324,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
           style={{ width: '100%', height: '100%' }}
         >
           <defs>
-            {/* Arrow markers */}
             <marker id="arrow-sync" markerWidth="10" markerHeight="10" refX="28" refY="4" orient="auto">
               <path d="M0,0 L0,8 L9,4 z" fill="#3b82f6" />
             </marker>
@@ -306,16 +339,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
             <marker id="arrow-failed" markerWidth="10" markerHeight="10" refX="28" refY="4" orient="auto">
               <path d="M0,0 L0,8 L9,4 z" fill="#f43f5e" />
             </marker>
-
-            {/* Glowing filters */}
-            <filter id="glow-edge-blue" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-            <filter id="glow-edge-green" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
           </defs>
 
           {/* Render Connections */}
@@ -325,19 +348,14 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
             if (!src || !tgt) return null;
 
             const isSelected = selectedEdgeId === edge.id;
-            const srcBlast = getNodeBlastStatus(src.id);
-            const tgtBlast = getNodeBlastStatus(tgt.id);
             const isBlastImpacting = blastRadiusResult && (
               (tgt.id === blastRadiusResult.failedNodeId) ||
-              (src.id === blastRadiusResult.failedNodeId) ||
-              (srcBlast === 'directly-impacted' && tgt.id === blastRadiusResult.failedNodeId)
+              (src.id === blastRadiusResult.failedNodeId)
             );
 
-            // Calculate start and end coordinates with node card dimensions
             const srcCenter = { x: src.position.x + 130, y: src.position.y + 70 };
             const tgtCenter = { x: tgt.position.x + 130, y: tgt.position.y + 70 };
 
-            // Control points for smooth bezier curve
             const dx = tgtCenter.x - srcCenter.x;
             const dy = tgtCenter.y - srcCenter.y;
             const cx1 = srcCenter.x + dx * 0.45;
@@ -349,8 +367,7 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
             const midX = (srcCenter.x + tgtCenter.x) / 2;
             const midY = (srcCenter.y + tgtCenter.y) / 2 - 10;
 
-            // Colors based on edge type
-            let strokeColor = '#3b82f6'; // default sync HTTP
+            let strokeColor = '#3b82f6';
             let strokeDash = 'none';
             let markerId = 'arrow-sync';
 
@@ -376,26 +393,10 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
                 className="pointer-events-auto cursor-pointer group"
                 onClick={() => onSelectEdge(edge)}
               >
-                {/* Wider invisible stroke for easy clicking */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke="transparent"
-                  strokeWidth="20"
-                />
-
-                {/* Outer Glow Path */}
+                <path d={pathD} fill="none" stroke="transparent" strokeWidth="20" />
                 {isSelected && (
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth="7"
-                    strokeOpacity="0.4"
-                  />
+                  <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="7" strokeOpacity="0.4" />
                 )}
-
-                {/* Primary Edge Line */}
                 <path
                   d={pathD}
                   fill="none"
@@ -406,8 +407,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
                   markerEnd={`url(#${markerId})`}
                   className={edge.type.includes('async') ? 'animate-pulse' : ''}
                 />
-
-                {/* Edge Label Pill */}
                 <g transform={`translate(${midX}, ${midY})`}>
                   <rect
                     x="-65"
@@ -448,7 +447,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
           const isDegraded = blastStatus === 'degraded';
           const isUnaffected = blastStatus === 'unaffected';
 
-          // Visual styles based on node type
           let borderColor = 'border-slate-800';
           let headerBg = 'bg-slate-900';
           let icon = <Server className="w-4 h-4 text-blue-400" />;
@@ -487,7 +485,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
             badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
           }
 
-          // Blast Radius Overlay adjustments
           let blastRing = '';
           let opacityClass = 'opacity-100';
 
@@ -515,7 +512,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
                 isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-950 shadow-blue-500/30 scale-[1.02]' : 'hover:border-slate-700'
               }`}
             >
-              {/* Header Bar */}
               <div className={`p-3 rounded-t-2xl border-b border-slate-800/80 flex items-center justify-between gap-2 ${headerBg}`}>
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="p-1.5 rounded-lg bg-slate-950/80 border border-slate-800">
@@ -531,7 +527,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
                   </div>
                 </div>
 
-                {/* Health & Blast indicator */}
                 {isFailed ? (
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white animate-pulse flex items-center gap-1">
                     <Flame className="w-3 h-3" /> OUTAGE
@@ -554,38 +549,34 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
                 )}
               </div>
 
-              {/* Body stats */}
               <div className="p-3 space-y-2 text-xs">
-                {/* Summary snippet */}
                 <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
                   {node.summary}
                 </p>
 
-                {/* Metrics chips */}
                 <div className="pt-2 border-t border-slate-850 flex items-center justify-between text-[10px] font-mono">
                   {node.inboundEndpoints.length > 0 && (
-                    <span className="text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded border border-blue-900/60" title="Inbound REST / gRPC Endpoints">
+                    <span className="text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded border border-blue-900/60">
                       {node.inboundEndpoints.length} Inbound
                     </span>
                   )}
                   {node.outboundCalls.length > 0 && (
-                    <span className="text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-900/60" title="Outbound Microservice Feign/HTTP Calls">
+                    <span className="text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-900/60">
                       {node.outboundCalls.length} Outbound
                     </span>
                   )}
                   {node.databases.length > 0 && (
-                    <span className="text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-900/60" title="Databases / Tables Accessed">
+                    <span className="text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-900/60">
                       {node.databases.length} DB
                     </span>
                   )}
                   {node.asyncEvents.published.length > 0 && (
-                    <span className="text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-900/60" title="Kafka / Service Bus Events">
+                    <span className="text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-900/60">
                       {node.asyncEvents.published.length} Pub
                     </span>
                   )}
                 </div>
 
-                {/* Language / Framework Badge */}
                 <div className="flex items-center justify-between pt-1 text-[10px]">
                   <span className={`px-2 py-0.5 rounded-full font-medium border ${badgeColor}`}>
                     {typeBadge}
@@ -612,36 +603,6 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
         <span className="flex items-center gap-1.5 text-amber-400">
           <span className="w-2 h-0.5 bg-amber-500 inline-block" /> Database CRUD
         </span>
-        <span className="flex items-center gap-1.5 text-indigo-400">
-          <span className="w-2 h-0.5 bg-indigo-500 inline-block" /> API Gateway
-        </span>
-      </div>
-
-      {/* MiniMap in bottom right */}
-      <div className="absolute bottom-4 right-4 z-10 hidden md:block w-36 h-24 bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-xl overflow-hidden shadow-2xl pointer-events-auto p-1.5">
-        <div className="text-[9px] font-mono text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
-          <span>Minimap</span>
-          <span className="text-slate-600">{graph.nodes.length} nodes</span>
-        </div>
-        <div className="relative w-full h-[60px] bg-slate-900/60 rounded border border-slate-850 overflow-hidden">
-          {graph.nodes.map(n => {
-            // Map coordinates into 0..1 range
-            const normX = Math.min(Math.max((n.position.x + 50) / 1400, 0), 1) * 100;
-            const normY = Math.min(Math.max((n.position.y + 50) / 800, 0), 1) * 100;
-            const isSelected = selectedNodeId === n.id;
-            return (
-              <div
-                key={n.id}
-                style={{ left: `${normX}%`, top: `${normY}%` }}
-                className={`absolute w-2 h-1.5 rounded-xs transform -translate-x-1/2 -translate-y-1/2 ${
-                  isSelected ? 'bg-blue-400 ring-1 ring-white' :
-                  n.type === 'database' ? 'bg-amber-400' :
-                  n.type === 'queue' ? 'bg-emerald-400' : 'bg-blue-600'
-                }`}
-              />
-            );
-          })}
-        </div>
       </div>
     </div>
   );

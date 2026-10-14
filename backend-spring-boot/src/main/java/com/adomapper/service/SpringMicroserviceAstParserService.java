@@ -17,7 +17,12 @@ import java.util.regex.Pattern;
 public class SpringMicroserviceAstParserService {
 
     private static final Pattern REST_MAPPING_PATTERN = Pattern.compile(
-            "@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\\s*\\(\\s*(?:(?:value|path)\\s*=\\s*)?[\"']([^\"']+)[\"']"
+            "@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)(?:\\s*\\(\\s*(?:(?:value|path)\\s*=\\s*)?[\"']([^\"']+)[\"'][^)]*\\))?"
+    );
+
+    private static final Pattern REST_CLIENT_PATTERN = Pattern.compile(
+            "baseUrl\\s*\\(\\s*[\"'](?:https?://)?([A-Za-z0-9_.-]+)(?::\\d+)?[\"']\\s*\\)(?:[\\s\\S]*?\\.(get|post|put|delete|patch)\\s*\\(\\s*\\))?(?:[\\s\\S]*?\\.uri\\s*\\(\\s*[\"']([^\"']+)[\"'])?",
+            Pattern.CASE_INSENSITIVE
     );
 
     private static final Pattern FEIGN_CLIENT_PATTERN = Pattern.compile(
