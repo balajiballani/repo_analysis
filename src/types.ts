@@ -60,6 +60,18 @@ export interface CodeEvidence {
   description: string;
 }
 
+export interface AzureCloudSpec {
+  targetCompute: string;
+  targetDatabase?: string;
+  targetMessaging?: string;
+  targetGateway?: string;
+  targetIdentity?: string;
+  targetMonitoring?: string;
+  targetSecrets?: string;
+  readinessScore: number;
+  recommendedSteps: string[];
+}
+
 export interface ArchitectureNode {
   id: string;
   name: string;
@@ -76,6 +88,7 @@ export interface ArchitectureNode {
   databases: DatabaseInteraction[];
   asyncEvents: AsyncEventPubSub;
   codeEvidence: CodeEvidence[];
+  azureCloud?: AzureCloudSpec;
   metrics: {
     complexityScore: number;
     blastRadiusCount: number;
@@ -122,6 +135,7 @@ export interface ArchitectureGraph {
   branch: string;
   organization?: string;
   project?: string;
+  cloudProvider?: 'azure' | 'github' | 'multi-cloud';
   scannedAt: string;
   nodes: ArchitectureNode[];
   edges: ArchitectureEdge[];

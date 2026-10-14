@@ -36,7 +36,7 @@ export default function App() {
   const [graph, setGraph] = useState<ArchitectureGraph | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activePreset, setActivePreset] = useState('ecommerce-payment');
+  const [activePreset, setActivePreset] = useState('');
   const [scanningTarget, setScanningTarget] = useState<ScanningTargetInfo | null>(null);
 
   // Selected elements
@@ -97,10 +97,7 @@ export default function App() {
     }
   }, []);
 
-  // Initial load: load payment-service as starting architecture
-  useEffect(() => {
-    loadPreset('ecommerce-payment');
-  }, [loadPreset]);
+  // Note: No default view on startup per user requirement! Dashboard starts in clean ready state.
 
   // Handle ADO & GitHub URL scanning with STRICT subpath isolation and session reset
   const handleScan = async (url: string, branch: string, pat?: string) => {
@@ -402,22 +399,23 @@ export default function App() {
                 Paste any GitHub or Azure DevOps subfolder URL. The mapper strictly isolates that microservice, mapping its ingress routes, downstream RestClient calls, databases, and Kafka streams.
               </p>
 
-              {/* Quick Select Microservice Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-left">
+              {/* Quick Select Microservice Cards (GitHub & Azure DevOps Migrated) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 text-left">
+                {/* 1. GitHub payment-service */}
                 <button
                   type="button"
                   onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/payment-service', 'main')}
-                  className="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
+                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-sm flex items-center gap-2">
+                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
                       <span>💳</span> Payment Service
                     </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60">
-                      payment-service
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                      GitHub
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-[11px] text-slate-400 mb-2.5">
                     Spring Boot 3.3, RestClient calls to Order & Auth, PostgreSQL, Kafka Profile Onboarding.
                   </p>
                   <div className="text-[11px] font-mono text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
@@ -426,20 +424,21 @@ export default function App() {
                   </div>
                 </button>
 
+                {/* 2. GitHub product-service */}
                 <button
                   type="button"
                   onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/product-service', 'main')}
-                  className="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
+                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-sm flex items-center gap-2">
+                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
                       <span>📦</span> Product Service
                     </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60">
-                      product-service
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                      GitHub
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-[11px] text-slate-400 mb-2.5">
                     Spring Boot 3.3, Products & Categories REST endpoints, PostgreSQL, Keycloak OAuth2.
                   </p>
                   <div className="text-[11px] font-mono text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
@@ -448,20 +447,21 @@ export default function App() {
                   </div>
                 </button>
 
+                {/* 3. GitHub order-service */}
                 <button
                   type="button"
                   onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/order-service', 'main')}
-                  className="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
+                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-sm flex items-center gap-2">
+                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
                       <span>🛒</span> Order Service
                     </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60">
-                      order-service
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                      GitHub
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-[11px] text-slate-400 mb-2.5">
                     Order Processing, RestClient to Auth & Product services, PostgreSQL 16 persistence.
                   </p>
                   <div className="text-[11px] font-mono text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
@@ -470,20 +470,67 @@ export default function App() {
                   </div>
                 </button>
 
+                {/* 4. Azure Repos: payment-service (Azure Migrated) */}
+                <button
+                  type="button"
+                  onClick={() => handleScan('https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fpayment-service', 'main')}
+                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
+                      <span>💳</span> Payment Service
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/60">
+                      Azure Repos
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mb-2.5">
+                    Azure-migrated payment-service: ACA container, Azure PostgreSQL Flexible, Azure Event Hubs.
+                  </p>
+                  <div className="text-[11px] font-mono text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span>Map Azure payment-service</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </div>
+                </button>
+
+                {/* 5. Azure Repos: product-service (Azure Migrated) */}
+                <button
+                  type="button"
+                  onClick={() => handleScan('https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fproduct-service', 'main')}
+                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
+                      <span>📦</span> Product Service
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/60">
+                      Azure Repos
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mb-2.5">
+                    Azure-migrated product-service: Azure APIM, Azure Container Apps, Azure DB for PostgreSQL.
+                  </p>
+                  <div className="text-[11px] font-mono text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span>Map Azure product-service</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </div>
+                </button>
+
+                {/* 6. Azure DevOps Core Banking */}
                 <button
                   type="button"
                   onClick={() => loadPreset('fintech-core')}
-                  className="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between"
+                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white text-sm flex items-center gap-2">
-                      <span>🏦</span> Core Banking (ADO)
+                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
+                      <span>🏦</span> Core Banking Mesh
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/60">
                       Azure DevOps
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-[11px] text-slate-400 mb-2.5">
                     Azure DevOps repo, Saga Orchestration, Azure Service Bus, PostgreSQL mesh.
                   </p>
                   <div className="text-[11px] font-mono text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">

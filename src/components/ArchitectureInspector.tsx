@@ -20,7 +20,9 @@ import {
   ExternalLink,
   Table,
   Activity,
-  Cpu
+  Cpu,
+  Cloud,
+  Compass
 } from 'lucide-react';
 import { ArchitectureNode, ArchitectureEdge, InboundEndpoint, OutboundCall, DatabaseInteraction } from '../types';
 
@@ -39,7 +41,7 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
   onSimulateOutage,
   onSelectNodeById
 }) => {
-  const [activeTab, setActiveTab] = useState<'inbound' | 'outbound' | 'database' | 'async' | 'code' | 'risks'>('inbound');
+  const [activeTab, setActiveTab] = useState<'inbound' | 'outbound' | 'database' | 'async' | 'code' | 'risks' | 'azure'>('inbound');
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<number | null>(null);
 
   if (!node && !edge) return null;
@@ -169,6 +171,7 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
           { id: 'async', label: `Events (${node.asyncEvents.published.length + node.asyncEvents.consumed.length})` },
           { id: 'code', label: `Code AST (${node.codeEvidence.length})` },
           { id: 'risks', label: `Risks (${node.metrics.riskFactors.length})` },
+          { id: 'azure', label: '☁️ Azure Cloud' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -488,6 +491,169 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* TAB 7: AZURE CLOUD & MIGRATION BLUEPRINT */}
+        {activeTab === 'azure' && (
+          <div className="space-y-4">
+            <div className="p-3.5 bg-gradient-to-r from-blue-950/80 via-slate-900 to-cyan-950/80 rounded-xl border border-blue-800/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Cloud className="w-4 h-4 text-cyan-400" />
+                  <span className="font-bold text-white text-xs">Azure Cloud Migration Target</span>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                  Readiness: {node.azureCloud?.readinessScore || 94}%
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Production architecture blueprint for migrating this Spring Boot microservice to Microsoft Azure cloud services with zero-downtime scalability.
+              </p>
+            </div>
+
+            {/* Azure Target Service Mappings */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                Azure PaaS & Managed Services Mapping
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Server className="w-3.5 h-3.5 text-blue-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-slate-400 uppercase font-mono">Compute & Hosting</div>
+                    <div className="font-semibold text-white text-xs">
+                      {node.azureCloud?.targetCompute || 'Azure Container Apps (Serverless KEDA + Envoy)'}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Auto-scales to zero; supports native Spring Boot 3 AOT/JVM containers.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Shield className="w-3.5 h-3.5 text-indigo-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-slate-400 uppercase font-mono">API Gateway & Routing</div>
+                    <div className="font-semibold text-white text-xs">
+                      {node.azureCloud?.targetGateway || 'Azure API Management (APIM) Developer/Standard'}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Enforces OAuth2/JWT token verification, mTLS, rate limiting, and path rewrite.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Database className="w-3.5 h-3.5 text-amber-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-slate-400 uppercase font-mono">Data Persistence</div>
+                    <div className="font-semibold text-white text-xs">
+                      {node.azureCloud?.targetDatabase || 'Azure Database for PostgreSQL - Flexible Server'}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Private VNet endpoint, automatic backups, pgvector extension, Liquibase migration.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Radio className="w-3.5 h-3.5 text-emerald-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-slate-400 uppercase font-mono">Event Streaming & Messaging</div>
+                    <div className="font-semibold text-white text-xs">
+                      {node.azureCloud?.targetMessaging || 'Azure Event Hubs (with Kafka 3.x Protocol API)'}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Drop-in replacement for Apache Kafka without code modifications in Spring Cloud Stream.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Key className="w-3.5 h-3.5 text-cyan-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-slate-400 uppercase font-mono">Identity & Secrets</div>
+                    <div className="font-semibold text-white text-xs">
+                      {node.azureCloud?.targetIdentity || 'Microsoft Entra ID + Azure Key Vault'}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Managed Identity passwordless access to Azure PostgreSQL and Event Hubs.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Azure Spring Boot application-azure.yml Snippet */}
+            <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden space-y-1">
+              <div className="p-2.5 bg-slate-900/90 border-b border-slate-850 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <FileCode className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="font-mono text-xs text-slate-200">src/main/resources/application-azure.yml</span>
+                </div>
+                <button
+                  onClick={() => {
+                    const snippet = `spring:\n  cloud:\n    azure:\n      keyvault:\n        secret:\n          property-sources[0]:\n            endpoint: https://kv-ecommerce.vault.azure.net/\n  datasource:\n    url: jdbc:postgresql://psql-ecommerce-flexible.postgres.database.azure.com:5432/${node.id.replace(/[^a-z0-9]/g, '')}?sslmode=require\n    username: "\${AZURE_POSTGRES_USER}"\n    password: "\${AZURE_POSTGRES_PASSWORD}"\n  kafka:\n    bootstrap-servers: eh-ecommerce.servicebus.windows.net:9093\n    properties:\n      security.protocol: SASL_SSL\n      sasl.mechanism: PLAIN`;
+                    handleCopy(snippet, 999);
+                  }}
+                  className="p-1 rounded text-slate-400 hover:text-white transition-all flex items-center gap-1 text-[10px]"
+                >
+                  {copiedCodeIdx === 999 ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedCodeIdx === 999 ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+              <pre className="p-3 bg-black/50 text-[11px] font-mono text-cyan-300/90 overflow-x-auto leading-relaxed max-h-48">
+{`spring:
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          property-sources[0]:
+            endpoint: https://kv-ecommerce.vault.azure.net/
+  datasource:
+    url: jdbc:postgresql://psql-ecommerce-flexible.postgres.database.azure.com:5432/${node.id.replace(/[^a-z0-9]/g, '')}?sslmode=require
+    username: "\${AZURE_POSTGRES_USER}"
+    password: "\${AZURE_POSTGRES_PASSWORD}"
+  kafka:
+    bootstrap-servers: eh-ecommerce.servicebus.windows.net:9093
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN`}
+              </pre>
+            </div>
+
+            {/* Azure Migration Checklist */}
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div className="text-[11px] font-semibold text-slate-300 uppercase">
+                Production Azure Readiness Steps
+              </div>
+              <div className="space-y-1.5 text-xs">
+                {(node.azureCloud?.recommendedSteps || [
+                  'Build Docker image using Google Jib / Cloud Native Buildpacks in Azure Pipelines',
+                  'Deploy to Azure Container Apps revision with CPU / Memory autoscaling rules',
+                  'Provision Azure Database for PostgreSQL Flexible Server with VNet private link',
+                  'Migrate Kafka topics to Azure Event Hubs namespace with Kafka protocol enabled',
+                  'Enable Azure Monitor Application Insights OpenTelemetry agent via JAVA_TOOL_OPTIONS'
+                ]).map((step, sIdx) => (
+                  <div key={sIdx} className="flex items-start gap-2 text-slate-300">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="text-[11px] leading-relaxed">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

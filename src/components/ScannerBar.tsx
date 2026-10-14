@@ -26,27 +26,31 @@ interface ScannerBarProps {
 
 const SAMPLE_REPOS = [
   {
-    name: 'Payment Service (Subfolder)',
+    name: 'GitHub: payment-service',
     url: 'https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/payment-service',
-    tech: 'Spring Boot 3 + RestClient + PostgreSQL + Kafka',
-    isGithub: true,
-    highlight: true
-  },
-  {
-    name: 'Product Service (Subfolder)',
-    url: 'https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/product-service',
-    tech: 'Spring Boot 3 + PostgreSQL + Liquibase + OAuth2 Keycloak',
-    isGithub: true,
-    highlight: true
-  },
-  {
-    name: 'Order Service (Subfolder)',
-    url: 'https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/order-service',
-    tech: 'Spring Boot 3 + RestClient + PostgreSQL',
+    tech: 'Spring Boot 3 + PostgreSQL + Kafka',
     isGithub: true
   },
   {
-    name: 'Contoso Banking (Azure DevOps)',
+    name: 'GitHub: product-service',
+    url: 'https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/product-service',
+    tech: 'Spring Boot 3 + PostgreSQL + Liquibase',
+    isGithub: true
+  },
+  {
+    name: 'Azure Repos: payment-service',
+    url: 'https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fpayment-service',
+    tech: 'Azure Container Apps + PostgreSQL Flexible',
+    isGithub: false
+  },
+  {
+    name: 'Azure Repos: product-service',
+    url: 'https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fproduct-service',
+    tech: 'Azure APIM + PostgreSQL Flexible',
+    isGithub: false
+  },
+  {
+    name: 'Azure DevOps: Banking Mesh',
     url: 'https://dev.azure.com/contoso-finance/core-banking/_git/payment-orchestrator',
     tech: 'Spring Boot 3 + Service Bus + PostgreSQL',
     isGithub: false
@@ -59,7 +63,7 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
   loading,
   graph
 }) => {
-  const [url, setUrl] = useState(graph?.repositoryUrl || 'https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/payment-service');
+  const [url, setUrl] = useState(graph?.repositoryUrl || '');
   const [branch, setBranch] = useState(graph?.branch || 'main');
   const [pat, setPat] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -146,7 +150,10 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
   };
 
   const handleSwitchMicroservice = (serviceFolder: string) => {
-    const targetUrl = `https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/${serviceFolder}`;
+    let targetUrl = `https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/${serviceFolder}`;
+    if (parsedInfo?.isAdo || url.includes('dev.azure.com') || url.includes('visualstudio.com')) {
+      targetUrl = `https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2F${serviceFolder}`;
+    }
     setUrl(targetUrl);
     setBranch('main');
     onScan(targetUrl, 'main', pat.trim() || undefined);
@@ -336,22 +343,21 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
           })}
         </div>
 
-        {/* Quick Sample Repositories */}
+        {/* Quick Sample Repositories (Azure DevOps & Cloud Migrations) */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] text-slate-400">Other:</span>
-          {SAMPLE_REPOS.filter(s => !s.url.includes('payment-service') && !s.url.includes('product-service')).map((sample) => (
+          <span className="text-[11px] text-blue-400 font-semibold flex items-center gap-1">
+            <span>☁️</span> Azure Repos:
+          </span>
+          {SAMPLE_REPOS.filter(s => !s.isGithub).map((sample) => (
             <button
               key={sample.name}
               type="button"
               onClick={() => handleSelectSample(sample.url)}
-              className="px-2 py-0.5 rounded text-[11px] font-mono border bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-800/80 transition-all flex items-center gap-1"
+              className="px-2 py-0.5 rounded text-[11px] font-mono border bg-blue-950/40 hover:bg-blue-900/60 text-blue-300 hover:text-white border-blue-800/60 transition-all flex items-center gap-1"
+              title={`Isolate internal microservice from Azure DevOps: ${sample.url}`}
             >
-              {sample.isGithub ? (
-                <Github className="w-2.5 h-2.5 text-emerald-400" />
-              ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-              )}
-              <span>{sample.name}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              <span>{sample.name.replace('Azure Repos: ', '').replace('Azure DevOps: ', '')}</span>
             </button>
           ))}
         </div>
