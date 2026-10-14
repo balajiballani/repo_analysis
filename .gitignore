@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Java class files & build artifacts
+*.class
+target/
+*.jar
+*.war
+*.ear
