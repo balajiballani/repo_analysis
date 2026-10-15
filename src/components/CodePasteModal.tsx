@@ -10,28 +10,14 @@ interface CodePasteModalProps {
 
 const DEFAULT_JAVA_SNIPPET = `@RestController
 @RequestMapping("/api/v1/orders")
-public class OrderOrchestratorController {
-
-    @Autowired
-    private InventoryFeignClient inventoryClient;
-
-    @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
+public class OrderController {
 
     @Autowired
     private OrderRepository orderRepository;
 
     @PostMapping("/checkout")
     public ResponseEntity<OrderDto> checkout(@RequestBody CheckoutRequest request) {
-        // Synchronous call to Inventory microservice
-        ReservationResponse res = inventoryClient.reserveStock(request.getItems());
-        
-        // Save to Database
-        OrderEntity order = orderRepository.save(new OrderEntity(request, res.getId()));
-
-        // Publish Asynchronous Kafka Event
-        kafkaTemplate.send("orders.lifecycle.v1", new OrderCreatedEvent(order.getId()));
-
+        OrderEntity order = orderRepository.save(new OrderEntity(request));
         return ResponseEntity.ok(OrderDto.from(order));
     }
 
@@ -43,27 +29,12 @@ public class OrderOrchestratorController {
     }
 }
 
-@FeignClient(name = "inventory-service", url = "\${services.inventory.url}")
-@CircuitBreaker(name = "inventoryCircuit", fallbackMethod = "reserveFallback")
-interface InventoryFeignClient {
-    @PostMapping("/api/v1/stock/reserve")
-    ReservationResponse reserveStock(@RequestBody List<ItemDto> items);
-}
-
 @Entity
 @Table(name = "orders_tbl")
 class OrderEntity {
     @Id private UUID id;
     private BigDecimal amount;
     private String status;
-}
-
-@Service
-class OrderEventListener {
-    @KafkaListener(topics = "payments.cleared.v1", groupId = "order-group")
-    public void onPaymentCleared(PaymentClearedEvent event) {
-        // Transition order state
-    }
 }`;
 
 export const CodePasteModal: React.FC<CodePasteModalProps> = ({
@@ -72,8 +43,8 @@ export const CodePasteModal: React.FC<CodePasteModalProps> = ({
   onAnalyzeCode,
   loading
 }) => {
-  const [systemName, setSystemName] = useState('Order Mesh Microservice');
-  const [fileName, setFileName] = useState('OrderOrchestratorController.java');
+  const [systemName, setSystemName] = useState('Order Microservice');
+  const [fileName, setFileName] = useState('OrderController.java');
   const [content, setContent] = useState(DEFAULT_JAVA_SNIPPET);
 
   if (!isOpen) return null;

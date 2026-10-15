@@ -36,7 +36,6 @@ export default function App() {
   const [graph, setGraph] = useState<ArchitectureGraph | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activePreset, setActivePreset] = useState('');
   const [scanningTarget, setScanningTarget] = useState<ScanningTargetInfo | null>(null);
 
   // Selected elements
@@ -60,41 +59,9 @@ export default function App() {
     setSelectedEdge(null);
     setBlastRadiusResult(null);
     setBlastRadiusMode(false);
-    setActivePreset('');
     setError(null);
     setLoading(false);
     setScanningTarget(null);
-  }, []);
-
-  // Load preset by ID with clean session reset
-  const loadPreset = useCallback(async (presetId: string) => {
-    // Clear previous graph immediately
-    setGraph(null);
-    setSelectedNode(null);
-    setSelectedEdge(null);
-    setBlastRadiusResult(null);
-    setBlastRadiusMode(false);
-    setError(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch(`/api/presets/${presetId}`);
-      if (!res.ok) throw new Error(`Failed to load preset ${presetId}`);
-      const data: ArchitectureGraph = await res.json();
-      setGraph(data);
-      setActivePreset(presetId);
-      // Select primary service node by default
-      const primaryService = data.nodes.find(n => n.type === 'service');
-      setSelectedNode(primaryService || data.nodes[0] || null);
-      setSelectedEdge(null);
-      setBlastRadiusResult(null);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Error loading preset');
-    } finally {
-      setLoading(false);
-      setScanningTarget(null);
-    }
   }, []);
 
   // Note: No default view on startup per user requirement! Dashboard starts in clean ready state.
@@ -107,7 +74,6 @@ export default function App() {
     setSelectedEdge(null);
     setBlastRadiusResult(null);
     setBlastRadiusMode(false);
-    setActivePreset('');
     setError(null);
     setLoading(true);
 
@@ -179,7 +145,6 @@ export default function App() {
     setSelectedEdge(null);
     setBlastRadiusResult(null);
     setBlastRadiusMode(false);
-    setActivePreset('');
     setLoading(true);
     setError(null);
 
@@ -250,8 +215,6 @@ export default function App() {
       {/* Navigation Header */}
       <Navbar
         graph={graph}
-        activePreset={activePreset}
-        onSelectPreset={loadPreset}
         onResetSession={handleResetSession}
         onOpenSpringBootCode={() => setIsSpringBootModalOpen(true)}
         onOpenCodePaste={() => setIsCodePasteModalOpen(true)}
@@ -270,9 +233,7 @@ export default function App() {
         }}
         loading={loading}
         onRefresh={() => {
-          if (activePreset) {
-            loadPreset(activePreset);
-          } else if (graph?.repositoryUrl) {
+          if (graph?.repositoryUrl) {
             handleScan(graph.repositoryUrl, graph.branch || 'main');
           }
         }}
@@ -432,6 +393,41 @@ export default function App() {
                   <div className="text-[11px] text-slate-400 leading-snug">
                     Completely stateless session. New URL inputs replace old graphs instantly.
                   </div>
+                </div>
+              </div>
+
+              {/* Quick Launch Real Microservice Chips */}
+              <div className="mb-6 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-left">
+                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold mb-2.5 flex items-center justify-between">
+                  <span>Quick-Launch Live Microservice Topology:</span>
+                  <span className="text-[10px] text-emerald-400 font-normal">Click to test live</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                  <button
+                    onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/inventory-service', 'main')}
+                    className="p-2.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-left transition-all group"
+                  >
+                    <div className="flex items-center justify-between text-cyan-300 font-bold mb-0.5">
+                      <span className="group-hover:text-cyan-200">inventory-service</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40">Zero Queues</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 truncate">
+                      Spring Boot 3 + PostgreSQL DB (No messaging)
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => handleScan('https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/payment-service', 'main')}
+                    className="p-2.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 text-left transition-all group"
+                  >
+                    <div className="flex items-center justify-between text-emerald-400 font-bold mb-0.5">
+                      <span className="group-hover:text-emerald-300">payment-service</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/40">Kafka Queue</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 truncate">
+                      Spring Boot 3 + Kafka Stream + PostgreSQL
+                    </div>
+                  </button>
                 </div>
               </div>
 

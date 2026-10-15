@@ -78,13 +78,6 @@ public class ArchitectureAnalysisController {
             return ResponseEntity.badRequest().build();
         }
 
-        // Direct preset selection
-        if (request.samplePresetId() != null && !request.samplePresetId().isBlank()) {
-            Optional<ArchitectureGraphDto> preset = presetService.getPreset(request.samplePresetId());
-            if (preset.isPresent()) {
-                return ResponseEntity.ok(preset.get());
-            }
-        }
 
         AdoRepositoryScannerService.AdoRepoDetails details = adoScannerService.parseAdoUrl(url, request.branch());
 

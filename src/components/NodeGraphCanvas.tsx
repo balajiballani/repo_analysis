@@ -64,6 +64,16 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'service' | 'database' | 'queue'>('all');
 
+  const hasQueues = useMemo(() => {
+    return graph.nodes.some(n => n.type === 'queue') || (graph.summary?.totalQueues ?? 0) > 0;
+  }, [graph]);
+
+  useEffect(() => {
+    if (typeFilter === 'queue' && !hasQueues) {
+      setTypeFilter('all');
+    }
+  }, [hasQueues, typeFilter]);
+
   // Detect if user pasted a repository URL in this search box
   const isPastedRepoUrl = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -257,19 +267,29 @@ export const NodeGraphCanvas: React.FC<NodeGraphCanvasProps> = ({
 
           {/* Type Filters */}
           <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
-            {(['all', 'service', 'database', 'queue'] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setTypeFilter(filter)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
-                  typeFilter === filter
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                }`}
-              >
-                {filter === 'all' ? 'All' : filter + 's'}
-              </button>
-            ))}
+            {(['all', 'service', 'database', ...(hasQueues ? ['queue'] : [])] as const).map((filter) => {
+              const count = filter === 'all'
+                ? graph.nodes.length
+                : filter === 'service'
+                  ? graph.nodes.filter(n => n.type === 'service' || n.type === 'gateway').length
+                  : filter === 'database'
+                    ? graph.nodes.filter(n => n.type === 'database' || n.type === 'cache').length
+                    : graph.nodes.filter(n => n.type === 'queue').length;
+
+              return (
+                <button
+                  key={filter}
+                  onClick={() => setTypeFilter(filter as any)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
+                    typeFilter === filter
+                      ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  {filter === 'all' ? `All (${count})` : `${filter}s (${count})`}
+                </button>
+              );
+            })}
           </div>
         </div>
 

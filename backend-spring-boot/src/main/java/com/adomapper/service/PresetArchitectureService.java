@@ -551,10 +551,10 @@ public class PresetArchitectureService {
                 ),
                 List.of(),
                 List.of(new DatabaseInteractionDto("inventory-db", "inventory (PostgreSQL 16)", "PostgreSQL 16", "ReadWrite", List.of("inventory", "warehouse_bins"), "Spring Data JPA", true, null)),
-                new AsyncEventPubSubDto(List.of(), List.of(new EventConsumedDto("order-placed-topic", "Kafka", "inventory-group", "handleOrderPlaced", null, null))),
+                new AsyncEventPubSubDto(List.of(), List.of()),
                 List.of(),
-                new NodeMetricsDto(4, 4, 1, 0, List.of()), new PositionDto(390, 220),
-                new AzureCloudDto("Azure Container Apps", "APIM", "Azure Database for PostgreSQL", "Azure Event Hubs", "Entra ID", "Key Vault", "Application Insights", 95, List.of())
+                new NodeMetricsDto(3, 2, 1, 0, List.of()), new PositionDto(390, 220),
+                new AzureCloudDto("Azure Container Apps", "APIM", "Azure Database for PostgreSQL", null, "Entra ID", "Key Vault", "Application Insights", 95, List.of())
         );
 
         ArchitectureNodeDto invDb = new ArchitectureNodeDto(
@@ -576,7 +576,7 @@ public class PresetArchitectureService {
                 Instant.now().toString(), "github",
                 List.of(invService, invDb),
                 edges,
-                new GraphSummaryDto(1, 1, 1, 0, 1, 1, "Spring Boot Microservice + PostgreSQL + Kafka", List.of())
+                new GraphSummaryDto(1, 1, 0, 0, 0, 1, "Spring Boot Microservice + PostgreSQL Persistence", List.of())
         ));
     }
 

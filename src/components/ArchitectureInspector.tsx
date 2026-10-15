@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Server, 
@@ -43,6 +43,13 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'inbound' | 'outbound' | 'database' | 'async' | 'code' | 'risks' | 'azure'>('inbound');
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<number | null>(null);
+
+  // Automatically reset tab to inbound when a different node is selected
+  useEffect(() => {
+    if (node) {
+      setActiveTab('inbound');
+    }
+  }, [node?.id]);
 
   if (!node && !edge) return null;
 
@@ -352,6 +359,18 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
         {/* TAB 4: ASYNC EVENTS */}
         {activeTab === 'async' && (
           <div className="space-y-4">
+            {node.asyncEvents.published.length === 0 && node.asyncEvents.consumed.length === 0 && (
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Zero Message Queues Detected</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed max-w-xs mx-auto">
+                  No Kafka, RabbitMQ, or Azure Service Bus messaging found. This microservice interacts via synchronous REST APIs and direct database persistence.
+                </p>
+              </div>
+            )}
+
             {/* Published Events */}
             <div className="space-y-2">
               <div className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 text-emerald-400">

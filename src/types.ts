@@ -1,6 +1,12 @@
 export type NodeType = 'service' | 'database' | 'queue' | 'cache' | 'gateway' | 'external';
 export type NodeStatus = 'healthy' | 'warning' | 'degraded';
 
+export type ResolutionConfidence = 
+  | 'AST_SEMANTIC_RESOLVED' 
+  | 'AST_SYNTACTIC_MATCH' 
+  | 'CONFIGURATION_GROUNDED' 
+  | 'FALLBACK_HEURISTIC';
+
 export interface InboundEndpoint {
   path: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'gRPC';
@@ -8,6 +14,8 @@ export interface InboundEndpoint {
   authRequired?: boolean;
   fileSource?: string;
   rateLimit?: string;
+  resolutionConfidence?: ResolutionConfidence;
+  astProvenance?: string;
 }
 
 export interface OutboundCall {
@@ -21,6 +29,9 @@ export interface OutboundCall {
   retryPolicy?: boolean;
   timeoutMs?: number;
   fileSource?: string;
+  resolutionConfidence?: ResolutionConfidence;
+  astProvenance?: string;
+  uncertaintyReason?: string;
 }
 
 export interface DatabaseInteraction {
@@ -32,6 +43,8 @@ export interface DatabaseInteraction {
   orm: string;
   transactional?: boolean;
   fileSource?: string;
+  resolutionConfidence?: ResolutionConfidence;
+  astProvenance?: string;
 }
 
 export interface AsyncEventPubSub {
@@ -42,6 +55,8 @@ export interface AsyncEventPubSub {
     payloadExample?: string;
     frequency?: string;
     fileSource?: string;
+    resolutionConfidence?: ResolutionConfidence;
+    astProvenance?: string;
   }>;
   consumed: Array<{
     topicOrQueue: string;
@@ -50,14 +65,20 @@ export interface AsyncEventPubSub {
     handlerName?: string;
     deadLetterQueue?: string;
     fileSource?: string;
+    resolutionConfidence?: ResolutionConfidence;
+    astProvenance?: string;
   }>;
 }
 
 export interface CodeEvidence {
   file: string;
-  type: 'controller' | 'client' | 'database' | 'messaging' | 'config';
+  type: 'controller' | 'client' | 'database' | 'messaging' | 'config' | 'ast-symbol';
   codeSnippet: string;
   description: string;
+  astKind?: string;
+  resolutionConfidence?: ResolutionConfidence;
+  symbolName?: string;
+  uncertaintyReason?: string;
 }
 
 export interface AzureCloudSpec {
@@ -97,6 +118,15 @@ export interface ArchitectureNode {
     riskFactors: string[];
   };
   position: { x: number; y: number };
+  analysisStrategy?: ResolutionConfidence;
+  astMetadata?: {
+    parsedFilesCount: number;
+    classesCount: number;
+    methodsCount: number;
+    annotationsCount: number;
+    unresolvedSymbols: string[];
+    uncertaintyNotes: string[];
+  };
 }
 
 export type EdgeType = 

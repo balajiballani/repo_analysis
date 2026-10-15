@@ -26,6 +26,12 @@ interface ScannerBarProps {
 
 const SAMPLE_REPOS = [
   {
+    name: 'GitHub: inventory-service',
+    url: 'https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/inventory-service',
+    tech: 'Spring Boot 3 + PostgreSQL (Zero Queues)',
+    isGithub: true
+  },
+  {
     name: 'GitHub: payment-service',
     url: 'https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/payment-service',
     tech: 'Spring Boot 3 + PostgreSQL + Kafka',
@@ -38,21 +44,15 @@ const SAMPLE_REPOS = [
     isGithub: true
   },
   {
-    name: 'Azure Repos: payment-service',
-    url: 'https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fpayment-service',
+    name: 'Azure Repos: inventory-service',
+    url: 'https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Finventory-service',
     tech: 'Azure Container Apps + PostgreSQL Flexible',
     isGithub: false
   },
   {
-    name: 'Azure Repos: product-service',
-    url: 'https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fproduct-service',
-    tech: 'Azure APIM + PostgreSQL Flexible',
-    isGithub: false
-  },
-  {
-    name: 'Azure DevOps: Banking Mesh',
-    url: 'https://dev.azure.com/contoso-finance/core-banking/_git/payment-orchestrator',
-    tech: 'Spring Boot 3 + Service Bus + PostgreSQL',
+    name: 'Azure Repos: payment-service',
+    url: 'https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2Fpayment-service',
+    tech: 'Azure Container Apps + Service Bus + PostgreSQL',
     isGithub: false
   }
 ];
@@ -132,14 +132,13 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
     onScan(url.trim(), effectiveBranch, pat.trim() || undefined);
   };
 
-  const handleSelectSample = (sampleUrl: string) => {
-    setUrl(sampleUrl);
-    setBranch('main');
-    onScan(sampleUrl, 'main', undefined);
-  };
-
   const handleUrlChange = (newUrl: string) => {
     setUrl(newUrl);
+    // When the user inputs or changes the URL, immediately reset any previous graph
+    // so previous project's queues, nodes, and architecture are instantly cleared!
+    if (graph && onResetSession) {
+      onResetSession();
+    }
     try {
       const u = new URL(newUrl.startsWith('http') ? newUrl : `https://${newUrl}`);
       const segs = u.pathname.split('/').filter(Boolean);
@@ -147,16 +146,6 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
         setBranch(segs[3]);
       }
     } catch (_) {}
-  };
-
-  const handleSwitchMicroservice = (serviceFolder: string) => {
-    let targetUrl = `https://github.com/hoangtien2k3/ecommerce-microservices/tree/main/${serviceFolder}`;
-    if (parsedInfo?.isAdo || url.includes('dev.azure.com') || url.includes('visualstudio.com')) {
-      targetUrl = `https://dev.azure.com/ecommerce-cloud/retail-mesh/_git/ecommerce-microservices?path=%2F${serviceFolder}`;
-    }
-    setUrl(targetUrl);
-    setBranch('main');
-    onScan(targetUrl, 'main', pat.trim() || undefined);
   };
 
   return (
@@ -272,25 +261,6 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
         </button>
       </form>
 
-      {/* New URL Live Notice (Stateless Direct Fetch) */}
-      {graph && url.trim() && graph.repositoryUrl && url.trim() !== graph.repositoryUrl && (
-        <div className="mt-2 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-800/40 flex items-center justify-between text-xs text-amber-300 animate-in fade-in">
-          <div className="flex items-center gap-2">
-            <RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>
-              New URL entered. Old architecture is not stored and will be replaced by reading live from: <strong className="font-mono text-white">{url}</strong>
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="text-[10px] font-bold text-amber-200 bg-amber-900/60 hover:bg-amber-800/80 px-2 py-0.5 rounded border border-amber-700/60"
-          >
-            Read From URL →
-          </button>
-        </div>
-      )}
-
       {/* Target Subfolder Live Banner */}
       {parsedInfo?.subPath && (
         <div className="mt-2 px-3 py-1.5 rounded-lg bg-cyan-950/40 border border-cyan-800/40 flex items-center justify-between text-xs text-cyan-300 animate-in fade-in">
@@ -332,8 +302,45 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
         </div>
       )}
 
-      {/* Topology Summary Counts (Only shown when an active architecture graph exists) */}
-      {graph && (
+      {/* Quick Select Real Sample Repos */}
+      <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex flex-wrap items-center gap-1.5 text-xs">
+        <span className="text-[11px] font-mono text-slate-400 font-semibold mr-1 flex items-center gap-1">
+          <FolderGit2 className="w-3.5 h-3.5 text-cyan-400" /> Samples:
+        </span>
+        {SAMPLE_REPOS.map((sample) => {
+          const isSelected = url.trim() === sample.url;
+          return (
+            <button
+              key={sample.url}
+              type="button"
+              onClick={() => {
+                setUrl(sample.url);
+                setBranch('main');
+                if (onResetSession) onResetSession();
+                onScan(sample.url, 'main');
+              }}
+              disabled={loading}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono border transition-all flex items-center gap-1.5 active:scale-95 ${
+                isSelected
+                  ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400 font-bold shadow-sm shadow-cyan-500/20'
+                  : 'bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800 hover:border-slate-700'
+              }`}
+              title={`${sample.tech} - Click to isolate and scan`}
+            >
+              {sample.isGithub ? (
+                <Github className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              )}
+              <span>{sample.name.replace(/^(GitHub|Azure Repos):\s*/i, '')}</span>
+              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Topology Summary Counts (Only shown when an active architecture graph exists for the current URL) */}
+      {graph && url.trim() === graph.repositoryUrl && (
         <div className="mt-2.5 pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 text-[11px] text-slate-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -350,9 +357,9 @@ export const ScannerBar: React.FC<ScannerBarProps> = ({
               <strong>{graph.summary.totalDatabases}</strong> Databases
             </span>
             <span className="text-slate-600">|</span>
-            <span className="flex items-center gap-1 text-emerald-400">
+            <span className={`flex items-center gap-1 ${graph.summary.totalQueues > 0 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}`}>
               <Radio className="w-3 h-3" />
-              <strong>{graph.summary.totalQueues}</strong> Queues
+              <strong>{graph.summary.totalQueues}</strong> Queues {graph.summary.totalQueues === 0 && <span className="text-[10px] text-slate-500 font-normal">(none)</span>}
             </span>
           </div>
         </div>

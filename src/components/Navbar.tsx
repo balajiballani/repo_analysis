@@ -15,8 +15,6 @@ import { ArchitectureGraph } from '../types';
 
 interface NavbarProps {
   graph: ArchitectureGraph | null;
-  activePreset: string;
-  onSelectPreset: (presetId: string) => void;
   onResetSession?: () => void;
   onOpenSpringBootCode: () => void;
   onOpenCodePaste: () => void;
@@ -30,8 +28,6 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   graph,
-  activePreset,
-  onSelectPreset,
   onResetSession,
   onOpenSpringBootCode,
   onOpenCodePaste,
@@ -59,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Spring Boot 3.3
+              Live Remote Fetch
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
               Azure DevOps & GitHub
@@ -73,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             ) : (
               <span className="truncate max-w-[280px] font-mono text-[11px] text-slate-400">
-                {graph?.systemName || 'Ready to map internal microservice folder...'}
+                {graph?.systemName || 'Stateless engine: ready for repository URL...'}
               </span>
             )}
             {graph?.branch && (
@@ -86,52 +82,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Preset Architecture Switcher */}
-      <div className="hidden lg:flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
-        <span className="text-[11px] font-medium text-slate-400 px-2">Presets:</span>
-        <button
-          onClick={() => onSelectPreset('ecommerce-payment')}
-          className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all ${
-            activePreset === 'ecommerce-payment'
-              ? 'bg-cyan-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-          title="Payment Service in ecommerce-microservices repository"
-        >
-          Payment Service
-        </button>
-        <button
-          onClick={() => onSelectPreset('ecommerce-product')}
-          className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all ${
-            activePreset === 'ecommerce-product'
-              ? 'bg-cyan-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-          title="Product Service in ecommerce-microservices repository"
-        >
-          Product Service
-        </button>
-        <button
-          onClick={() => onSelectPreset('ecommerce-order')}
-          className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all ${
-            activePreset === 'ecommerce-order'
-              ? 'bg-cyan-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-          title="Order Service in ecommerce-microservices repository"
-        >
-          Order Service
-        </button>
-        <button
-          onClick={() => onSelectPreset('fintech-core')}
-          className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all ${
-            activePreset === 'fintech-core'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-        >
-          Core Banking (ADO)
-        </button>
+      {/* Live Analysis Mode Indicator (No Stored Architecture) */}
+      <div className="hidden lg:flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="text-slate-300 font-medium">Stateless Discovery</span>
+        <span className="text-slate-600">|</span>
+        <span className="text-slate-400 font-mono text-[11px]">Direct live read from user input URL</span>
       </div>
 
       {/* Actions */}
